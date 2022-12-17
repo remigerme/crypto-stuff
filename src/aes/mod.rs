@@ -2,6 +2,8 @@
 
 use std::vec::Vec;
 
+pub mod cbc;
+
 // Type hints
 type Word = [u8; 4];
 type State = [Word; 4];
@@ -99,6 +101,16 @@ fn xor_word(a: &Word, b: &Word) -> Word {
         c[i] = a[i] ^ b[i];
     }
     c
+}
+
+fn xor_state(s: &State, t: &State) -> State {
+    let mut u = [[0; 4]; 4];
+    for i in 0..4 {
+        for j in 0..4 {
+            u[i][j] = s[i][j] ^ t[i][j];
+        }
+    }
+    u
 }
 
 
