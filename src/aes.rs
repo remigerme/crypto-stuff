@@ -73,7 +73,7 @@ const R_CON: [Word; 11] = [
 
 
 // IO <-> state
-pub fn io_to_state(inp: &IO) -> State {
+fn io_to_state(inp: &IO) -> State {
     let mut s = [[0; 4]; 4];
     for i in 0..4 {
         for j in 0..4 {
@@ -83,7 +83,7 @@ pub fn io_to_state(inp: &IO) -> State {
     s
 }
 
-pub fn state_to_io(s: &State) -> IO {
+fn state_to_io(s: &State) -> IO {
     let mut out: IO = Vec::new();
     for j in 0..4 {
         for i in 0..4 {
@@ -246,4 +246,104 @@ fn key_expansion(nk: usize, k: &MasterKey) -> ExpandedKey {
         w.push(xor_word(&w[i - nk], &temp));
     }
     w
+}
+
+
+// See section 5.3
+fn inv_cipher_state(s: &mut State, w: &ExpandedKey, nr: usize) {
+    add_round_key(s, &w[4 * nr .. 4 * (nr + 1)]);
+
+    for round in (1..nr).rev() {
+        inv_shift_rows(s);
+        inv_sub_bytes(s);
+        add_round_key(s, &w[4 * round .. 4 * (round + 1)]);
+        inv_mix_columns(s);
+    }
+    
+    inv_sub_bytes(s);
+    inv_shift_rows(s);
+    add_round_key(s, &w[0..4]);
+}
+
+pub fn inv_cipher(ciphertext: &IO, k: &MasterKey) -> IO {
+    assert_eq!(0, ciphertext.len() % 16);
+
+    let nk = k.len(); 
+    let nr = n_rounds(nk);
+    let w = key_expansion(nk, k);
+
+    let mut states: Vec<State> = (0..(ciphertext.len() / 16))
+        .map(|i| io_to_state(&ciphertext[16 * i .. 16 * (i + 1)].to_vec()))
+        .collect();
+    
+    for s in states.iter_mut() {
+        inv_cipher_state(s, &w, nr);
+    }
+
+    let plain: IO = {
+        states.iter()
+              .flat_map(
+                |s| state_to_io(s)
+                  .iter()
+                  .map(|&b| b)
+                  .collect::<Vec<u8>>())
+              .collect()
+    };
+    // PKCS#7 unpadding
+    let n = *plain.last().unwrap();
+    plain[0..plain.len() - n as usize].to_vec()
+}
+
+
+// See section 5.3.1
+fn inv_shift_rows(s: &mut State) {
+    // First row is not affected
+    // Second row
+    let a = s[1][3];
+    s[1][3] = s[1][2];
+    s[1][2] = s[1][1];
+    s[1][1] = s[1][0];
+    s[1][0] = a;
+    // Third row
+    let (a, b) = (s[2][0], s[2][1]);
+    s[2][0] = s[2][2];
+    s[2][2] = a;
+    s[2][1] = s[2][3];
+    s[2][3] = b;
+    // Fourth row
+    let a = s[3][3];
+    s[3][3] = s[3][0];
+    s[3][0] = s[3][1];
+    s[3][1] = s[3][2];
+    s[3][2] = a;
+}
+
+
+// See section 5.3.2
+fn inv_sub_bytes(s: &mut State) {
+    for i in 0..4 {
+        for j in 0..4 {
+            s[i][j] = INV_S_BOX[s[i][j] as usize];
+        }
+    }
+}
+
+
+// See section 5.3.3
+fn inv_mix_columns(s: &mut State) {
+    //0x09 = 1 + 8
+    let time_9 = |b| b ^ xtime(xtime(xtime(b)));
+    // 0x0b = 1 + 2 + 8
+    let time_b = |b| b ^ xtime(b) ^ xtime(xtime(xtime(b)));
+    // 0x0d = 1 + 4 + 8
+    let time_d = |b| b ^ xtime(xtime(b)) ^ xtime(xtime(xtime(b)));
+    //0x0e = 2 + 4 + 8
+    let time_e = |b| xtime(b) ^ xtime(xtime(b)) ^ xtime(xtime(xtime(b)));
+    for j in 0..4 {
+        let t = [s[0][j], s[1][j], s[2][j], s[3][j]];
+        s[0][j] = time_e(t[0]) ^ time_b(t[1]) ^ time_d(t[2]) ^ time_9(t[3]);
+        s[1][j] = time_9(t[0]) ^ time_e(t[1]) ^ time_b(t[2]) ^ time_d(t[3]);
+        s[2][j] = time_d(t[0]) ^ time_9(t[1]) ^ time_e(t[2]) ^ time_b(t[3]);
+        s[3][j] = time_b(t[0]) ^ time_d(t[1]) ^ time_9(t[2]) ^ time_e(t[3]);
+    }
 }
