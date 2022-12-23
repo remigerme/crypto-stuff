@@ -86,11 +86,11 @@ fn pad(m: &IO) -> IO {
 
 // See section 5.2.2
 fn io_to_blocks(m: &IO) -> Blocks {
-    assert!(m.len() % 1024 == 0);
+    assert!(m.len() % 128 == 0);
     let mut b = Vec::new();
-    for i in (0..m.len()).step_by(1024) {
+    for i in (0..m.len()).step_by(128) {
         let mut block = Vec::new();
-        for j in (0..1024).step_by(8) {
+        for j in (0..128).step_by(8) {
             block.push(u64::from_be_bytes([
                 m[i + j],
                 m[i + j + 1],
