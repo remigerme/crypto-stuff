@@ -8,6 +8,23 @@ type Block = [Word; 16];
 type Blocks = Vec<Block>;
 type IO = Vec<u8>;
 
+pub enum SHAMode {
+    SHA_384,
+    SHA_512,
+    SHA_512_224,
+    SHA_512_256
+}
+
+pub enum SHADigest {
+    DIGEST_384([u8; 48]),
+    DIGEST_512([u8; 64]),
+    DIGEST_512_224([u8; 28]),
+    DIGEST_512_256([u8; 32])
+}
+
+use SHAMode::*;
+use SHADigest::*;
+
 
 // See section 4.2.3
 const K: [Word; 80] = [
@@ -259,4 +276,14 @@ pub fn hash_512_256(m: &IO) -> [u8; 32] {
     let m = pad(m);
     let b = io_to_blocks(&m);
     hash_blocks_512_256(&b)
+}
+
+
+pub fn hash(m: &IO, mode: SHAMode) -> SHADigest {
+    match mode {
+        SHA_384 => DIGEST_384(hash_384(m)),
+        SHA_512 => DIGEST_512(hash_512(m)),
+        SHA_512_224 => DIGEST_512_224(hash_512_224(m)),
+        SHA_512_256 => DIGEST_512_256(hash_512_256(m))
+    }
 }
