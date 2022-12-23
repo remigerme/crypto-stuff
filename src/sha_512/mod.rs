@@ -183,7 +183,7 @@ fn hash_blocks_512(b: &Blocks) -> [u8; 64] {
     t[0..64].try_into().unwrap()
 }
 
-fn hash_512(m: &IO) -> [u8; 64] {
+pub fn hash_512(m: &IO) -> [u8; 64] {
     let m = pad(m);
     let b = io_to_blocks(&m);
     hash_blocks_512(&b)
@@ -207,7 +207,7 @@ fn hash_blocks_384(b: &Blocks) -> [u8; 48] {
     t[0..48].try_into().unwrap()
 }
 
-fn hash_384(m: &IO) -> [u8; 48] {
+pub fn hash_384(m: &IO) -> [u8; 48] {
     let m = pad(m);
     let b = io_to_blocks(&m);
     hash_blocks_384(&b)
@@ -231,7 +231,7 @@ fn hash_blocks_512_224(b: &Blocks) -> [u8; 28] {
     t[0..28].try_into().unwrap()
 }
 
-fn hash_512_224(m: &IO) -> [u8; 28] {
+pub fn hash_512_224(m: &IO) -> [u8; 28] {
     let m = pad(m);
     let b = io_to_blocks(&m);
     hash_blocks_512_224(&b)
@@ -255,7 +255,7 @@ fn hash_blocks_512_256(b: &Blocks) -> [u8; 32] {
     t[0..32].try_into().unwrap()
 }
 
-fn hash_512_256(m: &IO) -> [u8; 32] {
+pub fn hash_512_256(m: &IO) -> [u8; 32] {
     let m = pad(m);
     let b = io_to_blocks(&m);
     hash_blocks_512_256(&b)
