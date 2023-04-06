@@ -1,6 +1,7 @@
 extern crate rand;
 
 mod aes;
+mod sha_512;
 
 use std::vec::Vec;
 use std::time::Instant;
@@ -23,4 +24,14 @@ fn main() {
     let elapsed = now.elapsed();
     
     println!("{}", elapsed.as_millis());
+
+    // SHA-512 and hmac
+    let key = "a super key".as_bytes().to_vec();
+    let message = "the super secret message to cipher".as_bytes().to_vec();
+    let digest = sha_512::extract_digest(
+        sha_512::hash(&message, sha_512::SHAMode::Sha512));
+    let mac = sha_512::hmac::hmac(&key, &message, sha_512::SHAMode::Sha512);
+
+    println!("{:?}", digest);
+    println!("{:?}", mac);
 }
