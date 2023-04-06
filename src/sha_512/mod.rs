@@ -1,6 +1,8 @@
 // Implemented according to FIPS 180-4 : https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf
 // I implemented only SHA-512 and truncated versions (SHA-384, SHA-512/224, SHA-512/256).
 
+pub mod hmac;
+
 use std::vec::Vec;
 
 type Word = u64;
@@ -8,6 +10,7 @@ type Block = [Word; 16];
 type Blocks = Vec<Block>;
 type IO = Vec<u8>;
 
+#[derive(Clone, Copy)]
 pub enum SHAMode {
     Sha384,
     Sha512,
@@ -285,5 +288,14 @@ pub fn hash(m: &IO, mode: SHAMode) -> SHADigest {
         Sha512 => Digest512(hash_512(m)),
         Sha512_224 => Digest512_224(hash_512_224(m)),
         Sha512_256 => Digest512_256(hash_512_256(m))
+    }
+}
+
+pub fn extract_digest(d: SHADigest) -> IO {
+    match d {
+        Digest384(x) => x.to_vec(),
+        Digest512(x) => x.to_vec(),
+        Digest512_224(x) => x.to_vec(),
+        Digest512_256(x) => x.to_vec()
     }
 }
