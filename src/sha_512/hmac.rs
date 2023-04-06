@@ -2,7 +2,7 @@
 
 use super::{IO, SHAMode, hash, extract_digest};
 
-fn hmac(k: &IO, text: &IO, mode: SHAMode) -> IO {
+pub fn hmac(k: &IO, text: &IO, mode: SHAMode) -> IO {
     let b = 128; // block size for all sha512 modes
     let ipad = vec![0x36u8; b];
     let opad = vec![0x5cu8; b];
